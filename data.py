@@ -3,6 +3,7 @@ import pandas as pd
 import tarfile
 import urllib.request
 import matplotlib.pyplot as plt
+from test_set_split import shuffle_and_split_data
 
 # ==========================
 # === Load housing Data ====
@@ -37,3 +38,9 @@ print(housing['ocean_proximity'].value_counts())
 
 housing.hist(bins=50, grid=True)
 plt.show()
+
+# =======================================================
+# === Divide the Dataset into Train-set and Test-set ====
+# =======================================================
+
+train_set, test_set = shuffle_and_split_data(housing, 0.2)

@@ -1,0 +1,47 @@
+Phân tích về file test_set_split: 
+
+# =========================
+# === np.permutation() ====
+# =========================
+
+np.random.permutation trả về một hoán vị ngẫu nhiên khi mình đưa một 
+dãy có n phần tử vào.
+
+Nó sẽ trả về một dãy hoán vị từ 0 -> n - 1. Mỗi lần gọi như thế này, 
+np.permutation sẽ trả về một dãy ngẫu nhiên không theo cố định, để có một
+dãy cố định với mỗi lần gọi, mình phải đặt random seed trước. 
+
+Nếu không đặt seed, kết quả sẽ khác nhau sau mỗi lần gọi. 
+
+# ===============================
+# === shuffle_and_split_data ====
+# ===============================
+
+def shuffle_and_split_data(data, test_ratio): 
+    shuffle_indices = np.random.permutation(len(data))
+    test_set_size = int(len(data) * test_ratio)
+    test_indices = shuffle_indices[:test_set_size]
+    train_indices = shuffle_indices[test_set_size:]
+    
+    return data.iloc[train_indices], data.iloc[test_indices]
+
+Giải thích: 
+
+np permutation sẽ tạo ra một mảng hoán vị ngẫu nhiên của data từ 0 đến len(data) - 1. 
+
+Sau đó ta tính tỉ lệ chia ratio. 
+Thế thì, test_set_size tính ra index cho test set dựa trên tỷ lệ test_ratio
+Sau đó, test_indices lấy phần đầu
+train_indices lấy phần cuối làm train set
+Cuối cùng thì data.iloc sẽ trả về các dòng tương ứng theo chỉ số đó lần lượt. 
+
+# ==================================================
+# === is_id_in_test_set(identifier, test_ratio) ====
+# ==================================================
+
+Mục đích của hàm này là để quyết định một bản ghi (dòng dữ liệu) có thuộc test set hay không,
+dựa trên identifier (mã định danh của bản ghi đó) và tỷ lệ chia (test_ratio)
+
+- crc32 bản chất là một hàm hash CRC 32 trả về số nguyên 32-bit của identifier. 
+- Hàm này trả về true nếu giá trị hash nhỏ hơn một ngưỡng nhất định (tỉ lệ test * max hash value)
+- Tức là dùng giá trị hash của identifier để quyết định xem nó thuộc test set hay train set
