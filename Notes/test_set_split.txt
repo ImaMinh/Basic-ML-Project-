@@ -35,13 +35,59 @@ Sau đó, test_indices lấy phần đầu
 train_indices lấy phần cuối làm train set
 Cuối cùng thì data.iloc sẽ trả về các dòng tương ứng theo chỉ số đó lần lượt. 
 
+Khi mình chia dataset ra thành train và test set như thế này, mình có thể làm như sau để tập test luôn giống nhau
+sau mỗi lần chay:
+1. Lưu ra file cứng và không thay đổi gì. 
+2. Đặt 'random seed' cho bộ sinh số ngẫu nhiên (ví dụ np.random.seed(42)) trước khi hoán vị dữ liệu.
+
+Vấn đề với 2 cách này:
+    - Khi mình cập nhật dataset:
+        + Thêm dữ liệu mới, xóa dữ liệu cũ, thì: 
+            + Nếu mình lưu file cứng, thì file cứng không cập nhật được phần dữ liệu mới đó vào test/train
+        + Set seed cho permutation:
+            + Do dataset mới đã thay đổi (thêm dòng mới, sửa dòng cũ), nên vị trí của từng dòng trong tập
+            test/train sẽ không còn giữ sự ổn định về sự phân phối khi dataset thay đổi.    
+
 # ==================================================
 # === is_id_in_test_set(identifier, test_ratio) ====
 # ==================================================
 
-Mục đích của hàm này là để quyết định một bản ghi (dòng dữ liệu) có thuộc test set hay không,
-dựa trên identifier (mã định danh của bản ghi đó) và tỷ lệ chia (test_ratio)
+Có một cách để xử lý vấn để ở trên, đó là sử dụng index (id) của mỗi row, dùng hàm hash crc32, và sau đó
+kiểm tra xem cái hash id đó có <= 20% của maximum hash value. Điều này đảm bảo là cái test set sẽ ổn định
+sau nhiều lần chạy.
 
-- crc32 bản chất là một hàm hash CRC 32 trả về số nguyên 32-bit của identifier. 
-- Hàm này trả về true nếu giá trị hash nhỏ hơn một ngưỡng nhất định (tỉ lệ test * max hash value)
-- Tức là dùng giá trị hash của identifier để quyết định xem nó thuộc test set hay train set
+Câu hỏi: 
+1. Tức là bây giờ mình hash cái index ra thành một cái chuỗi hash_id. Vậy thì làm thế nào để mình biết là
+cái max hash id là gì, liệu nó là giá trị int lớn nhất, độ lớn của dataset được hash ra, nó là gì ?? 
+
+tl: Hàm hash crc32 trả về một số nguyên 32-bit không dấu có giá trị nằm trong khoảng 0 -> 2**32 -1.
+Max hash id là giá trị lớn nhất có thể mà hàm hash trả về, tức là 2**32 - 1 chưa không phải độ lớn của dataset. 
+Giá trị này không liên quan đến số lượng instnace trong dataset, mà chỉ phụ thuộc vào đặc tính của hàm hash CRC32. 
+
+2. Nếu như mình thêm row hay instance vào trong cái dataset này, vậy thì cái max_hash_id có thay đổi không? 
+
+tl: max id không thay đổi, luôn là một hằng số 2**32 - 1, không thay đổi dù dataset có thêm vào bao nhiêu row. 
+Vậy tại sao vẫn dùng test_ratio * max_hash_id để chia phần trăm bản ghi. 
+
+---> Vậy tại sao vẫn dùng test_ratio * max_hash_id để chia phần trăm bản ghi ra: 
+
+Bản chất của hàm crc32 là không quan trọng độ dài của dataset là bao nhiêu, khi nó hash các phần tử của mình ra thành
+các id (một integer trong khoảng 0 -> 2**32 - 1), nó sẽ phân bố các id này ra đều đặn trong khoảng này. Nghĩa là bất kể 
+độ dài của dataset là gì, mỗi id của mỗi phần tử sẽ nằm rải rác trong khoảng từ 0 -> max_id. 
+
+1. Hàm hash như CRC32 luôn trả về giá trị trong khoảng 0 đến 2³² - 1, không phụ thuộc kích thước bộ dữ liệu.
+
+2. Khi bạn có ít phần tử (ví dụ 10 phần tử), các giá trị hash của chúng vẫn nằm rải rác trên toàn bộ khoảng này, 
+nhưng vì chỉ có 10 giá trị, nên những giá trị này sẽ rải thưa thớt và cách nhau khá xa nhau trên thước 0 → 2³²-1.
+Ví dụ, 10 phần tử có thể cho giá trị hash: 123,456,789; 987,654,321; 1,234,567,890; ... rải khắp khoảng.
+    
+3. Nếu dataset rất nhỏ thì việc chia bằng cách so sánh với test_ratio * 2**32 vẫn hoạt động, nhưng sẽ có độ "nhảy" 
+(granularity) lớn vì ít điểm. Nghĩa là không chia tỉ lệ test/train chính xác đến từng phần trăm nhỏ lẻ, 
+nhưng vẫn đúng về nguyên tắc.
+
+4. Khi dataset rất lớn (hàng ngàn, hàng triệu bản ghi), thì các giá trị hash phủ đều, 
+việc chia theo ngưỡng hash rất chính xác, test/train set có tỉ lệ rất sát với test_ratio.
+
+----> Conclusion: vậy, từ đây, mình hiểu được rằng, việc nhân test_ratio*max_id, mình sẽ luôn được split là 20% và 80%, 
+và split những cái id < 20% của cái ratio này mình sẽ được cái tập test_ratio mình cần, do cái độ rải rác từ 0 -> max_id
+luôn đồng đều, vậy nên mình sẽ luôn nhận được một cái tỉ lệ như thế này. 

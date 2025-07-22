@@ -13,8 +13,11 @@ def shuffle_and_split_data(data, test_ratio):
     
     return data.iloc[train_indices], data.iloc[test_indices]
 
+# Using instnace identifier to decide whether or not the instance should go in
+# the test set
+
 def is_id_in_test_set(identifier, test_ratio): 
-    return crc32(np.int64(identifier)) < test_ratio * 2 * 32
+    return crc32(np.int64(identifier)) < test_ratio * (2**32)
 
 def split_data_with_id_hash(data, test_ratio, id_column):
     ids = data[id_column]

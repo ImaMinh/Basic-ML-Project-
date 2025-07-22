@@ -3,7 +3,7 @@ import pandas as pd
 import tarfile
 import urllib.request
 import matplotlib.pyplot as plt
-from test_set_split import shuffle_and_split_data
+from test_set_split import shuffle_and_split_data, split_data_with_id_hash
 
 # ==========================
 # === Load housing Data ====
@@ -44,3 +44,10 @@ plt.show()
 # =======================================================
 
 train_set, test_set = shuffle_and_split_data(housing, 0.2)
+
+# Using the split_data_with_id (crc32) function to split the dataset. 
+# However, the original dataset doesn't have an 'index' column that we can access and 
+# manipulate. Thus, we need to re-structure the dataset. 
+
+housing_with_id = housing.reset_index(drop=False)
+train_set, test_set = split_data_with_id_hash(housing_with_id, 0.2, 'index')
