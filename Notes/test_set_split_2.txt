@@ -1,0 +1,69 @@
+# ============================
+# === Stratified Sampling ====
+# ============================
+
+Như ở trong Note 1, chúng ta đã sử dụng 2 hàm để Ramdom Sampling. Tuy nhiên, random sampling sẽ đưa ra sampling
+biased nếu như tập dataset nhỏ. 
+
+Trong quyển sách, người ta bảo là median income là một yếu tố quan trọng để dự đoán được median house price.
+
+--> Mình nghĩ là họ muốn Stratified sampling meidan income theo các group [0->1.5, 1.5->3, 3->4.5, 4.5->6]k USD
+Tức là chia dataset thành train/test split thì người ta uốn rằng các nhóm thu thập khác nhau đều được đại
+diện đầy đủ và cân bằng trong cả 2 tập. 
+
+Tức là nếu mà sử dụng random sampling ở đây, thì các median income sẽ dễ bị:
+    + một số nhóm không được đại diện (ít instance trong test/train set)
+
+--> CONCLUSION: Quyển sách đang muốn sử dụng Stratified sampling để chia test/train set. Tức là mỗi set sẽ phải
+bao gồm đủ các phần tử từ các nhóm income khác nhau. 
+
+
+
+# === Giải thích một số đoạn code ===
+
+# --- Code 1 ---
+
+def stratify_grouping(data: pd.DataFrame) -> pd.DataFrame: 
+    housing = data
+    housing['income_cat'] = pd.cut(housing['median_income'],
+                                   bins =[0.0, 1.5, 3.0, 4.5, 6.0, np.inf], # thử bỏ np.infinity (np.inf) đi xem sao
+                                   labels=[1, 2, 3, 4, 5])
+    
+    housing['income_cat'].value_counts().sort_index()
+    
+    return housing 
+
+ở đây, pd.cut() là hàm của pandas để chia dữ liệu liên tục thành các bins rời rạc.
+Ví dụ, mình có cột thu nhập liên tục, mình muốn phân thành các nhóm như 'thấp', 'trung bình', 'cao', thì dùng
+pd.cut().
+Nó sẽ trả về một dãy dữ liệu liên tục, ví dụ: [1, 3, 3, 4, 2, 2, 2, 1, 1, 1, 2, ...]
+Không giống như groupby, groupby sẽ trả về các nhóm [group của 1: 1, 1, 1,...; group của 2: 2, 2,...]
+
+Ý nghĩa của bins=[0.0, 1.5, 3.0, 4.5, 6.0, np.inf]: chia các nhóm thu nhập thành 6 nhóm:
+    - Nhóm 1: (0.0 -> 1.5k USD)
+    - Nhóm 2: (1.5 -> 3.0k USD)
+    - Nhóm 3: (3.0 -> 4.5k USD)
+    - Nhóm 4: (4.5 -> 6.0k USD)
+    - Nhóm 5: (6.0 -> > 6.0k USD)
+
+    Sau đó, apply labels cho các nhóm này: labels = [1, 2, 3, 4, 5] tương ứng cho mỗi nhóm. 
+
+-> Đọc về pd.cut() trên mạng
+
+# --- Code 2 ---
+
+splitter = StratifiedShuffleSplit(n_splits=10, test_size=0.2, random_state=42)
+strat_splits = []
+
+def stratify_splitting(housing: pd.DataFrame):
+    for train_index, test_index in splitter.split(housing, housing['income_cat']):
+        strat_train_set_n = housing.iloc[train_index]
+        strat_test_set_n = housing.iloc[test_index]
+        strat_splits.append([strat_train_set_n, strat_test_set_n])
+
+    return strat_splits
+
+
+Để hiểu được đoạn code này, thứ nhất, phải hiểu được tại sao cần phải shuffle data nhiều lần, mỗi lần tạo ra
+một bộ train/test split khác nhau. Điều này đảm bảo rằng data là ngẫu nhiên và không có bias khiến cho model 
+dự đoán lỗi được. 
