@@ -67,3 +67,22 @@ def stratify_splitting(housing: pd.DataFrame):
 Để hiểu được đoạn code này, thứ nhất, phải hiểu được tại sao cần phải shuffle data nhiều lần, mỗi lần tạo ra
 một bộ train/test split khác nhau. Điều này đảm bảo rằng data là ngẫu nhiên và không có bias khiến cho model 
 dự đoán lỗi được. 
+
+Stratified Shuffle Split là một công cụ trong sklearn giúp chia dữ liệu thành các cặp train/test để đảm bảo mỗi 
+lần chia: 
+    * Tỷ lệ các nhóm (strata) giống nhau trong train và  (hỏi lại ChatGPT đoạn này)
+    * Dữ liệu được xáo trộn ngẫu nhiêu (shuffle)
+
+    n_splits = 10 nghĩa là mình sẽ cần 10 cặp train/test khác nhau
+    test_size = 0.2 <-> mỗi lần laays 20% tập dữ liệu làm tập test
+
+    --> for train_index, test_index in splitter.split(housing, housing['income_cat']) nghĩa là:
+        + housing: dataset cần chia.
+        + housing['income_cat']: cột chứa nhãn dùng để stratify.
+
+        Mỗi lần lặp vòng for, split trả về: 
+            - train_index: danh sách index của các bản thuộc tập train.
+            - test_index: danh sách chỉ số của các bản thuộc tập test.
+
+    Sau đó, hàm stratify_splitting mỗi lần loop sẽ đưa ra một bản test/train split. Cuối cùng, strat_splits 
+    trả về một list khoảng (n_splits) bản các test/train split. 

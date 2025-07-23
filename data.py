@@ -4,6 +4,8 @@ import tarfile
 import urllib.request
 import matplotlib.pyplot as plt
 
+from pandas.plotting import scatter_matrix
+
 from test_set_split import shuffle_and_split_data, split_data_with_id_hash
 from stratify_sampling_test_train import stratify_grouping, stratify_splitting
 
@@ -72,6 +74,39 @@ plt.show()
 # --> Sau khi nhóm các nhóm thu nhập thành các stratas rồi, chúng ta sẽ bắt đầu stratify
 # sampling để được test/train split đều nhau. 
 
-strat_train_set, strat_test_set = zip(stratify_splitting(housing))
+strat_train_set, strat_test_set = stratify_splitting(housing)[0]
 
-#print(strat_test_set['income_cat'].value_counts() / len(strat_test_set))
+print(strat_test_set['income_cat'].value_counts() / len(strat_test_set))
+
+
+# ===========================================================================
+# === Plotting Scatter Plot of Housing Distribution in the Given Dataset ====
+# ===========================================================================
+
+housing.plot(kind="scatter", x="longitude", y="latitude", grid=True,
+    s=housing["population"] / 100, label="population",
+    c="median_house_value", cmap="jet", colorbar=True,
+    legend=True, sharex=False, figsize=(10, 7))
+
+plt.show()
+
+
+# =============================
+# === Correlation Analysis ====
+# =============================
+
+# === Calculating Correlation using Pearson's r ===
+
+corr_matrix = housing.loc[:, housing.columns != 'ocean_proximity'].corr()
+print(corr_matrix['median_house_value'].sort_values(ascending=False))
+
+# === Checking correlation using (Pandas's) scatter_matrix function ===
+
+attributes = ["median_house_value", "median_income", "total_rooms",
+"housing_median_age"]
+scatter_matrix(housing[attributes], figsize=(12, 8))
+plt.show()
+
+# --- Looking at the median_house_value row, we see that only the correlation between this and median_income has a positive corr -> plot it ---
+housing.plot(kind='scatter', x='median_income', y='median_house_value', alpha=0.1, grid=True)
+plt.show()
