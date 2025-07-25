@@ -1,0 +1,65 @@
+** Prepare model for ML training: 
+
+--- Predictors and Labels: 
+
+1. Predictors: 
+    - Predictors are input varaibles we use to predict something: Features, independent varaibles: 
+        + Number of rooms.
+        + Location coords. 
+        + Median income.
+        + House age. 
+        ... basically all the columns except the one we want to predict. 
+
+2. Labels: 
+        + Output varibales or values we want to predict. 
+        + Dependant variables or response variables. 
+        + The 'Median' house price in our case. 
+
+
+--- Cleaning the data:
+
+In our dataset, the total_bedrooms attribute has some missing values. We have three option
+Most ML algorithms can't work with missing values, so we need to handle them. 
+The 3 options to fix missing values: 
+    - Remove rows with missing values. 
+    - Remove entire attribute. # Both this and the above removes a lot of meaningful data from the set. 
+    - Imputation: fill in missing values: replace missing values with meaningful valuel like zero, mean or median of the column.    
+    ---> basic treating missing values. A part of Data Preprocessing.
+
+The book tells us to fill missing total_bedrooms values with the column's medina. 
+
+++ Why should we fill missing values with mean and median and how does it work: 
+
+Filling the missing values with the mean or median is basically keeping the central tendency of the distribution like the original.
+The reason why this is different from filling the na values with 0 is because, imagine if you fill the missing values with 0, the number of elements goes up, because 0
+is still "IN" the record. So, the number of elements goes up, but the values are 0. So imagine there are basically houses with $0 price tags in your set, which this is 
+flawed. 
+
+Filling NA with mean when data is normally distributed.
+Filling NA with median when data is skewed. 
+
+--- Sci-kitLearn SimpleImputer tool:
+
+What is simple imputer?     
+
+SimpleImputer is basically a tool that automates the following process:
+1. Calculate the <train_set> mean or median.
+2. Apply the calculated train_set's mean or median to the missing values of both the train and test set. 
+
+However, SimpleImputer also encapsulates methods like fit and transform into the ML pipelines, this avoid redundant coding 
+
+If train is normally distributed but test is skewed, does applying train median/mean to test cause problems?
+Yes, it can cause issues, but usually it's acceptable:
+
+    + The imputation values come from training data because the model “learns” from that data distribution.
+    + You do not want to peek into test data distribution to choose imputation values (to avoid data leakage).
+    + If test distribution is very different (e.g., more skewed), the train median may be a poor estimate for test missing values.
+    But this is expected in real-world ML: models are trained on training data, so preprocessing must rely on train stats only.
+    + If train and test distributions differ drastically, you may need to:
+        + Collect more representative training data.
+        + Use more advanced imputation methods (e.g., model-based imputers).
+        + Perform domain-specific preprocessing.
+        + Detect distribution shift and adapt model accordingly.
+
+--- Understanding One Hot Encoding: 
+https://www.geeksforgeeks.org/machine-learning/ml-one-hot-encoding/

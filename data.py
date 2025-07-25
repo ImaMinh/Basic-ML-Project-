@@ -1,13 +1,21 @@
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import tarfile
 import urllib.request
 import matplotlib.pyplot as plt
 
 from pandas.plotting import scatter_matrix
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.impute import SimpleImputer
 
 from test_set_split import shuffle_and_split_data, split_data_with_id_hash
 from stratify_sampling_test_train import stratify_grouping, stratify_splitting
+
+
+# ======================================== DATA PREPROCESSING ==========================================
+
+
 
 # ==========================
 # === Load housing Data ====
@@ -41,15 +49,15 @@ print(housing['ocean_proximity'].value_counts())
 # ============================
 
 housing.hist(bins=50, grid=True)
-plt.show()
+#plt.show()
 
 # =======================================================
-# === Divide the Dataset into Train-set and Test-set ====
+# === Divide the Dataset into Train-set and Test-set ====  # ---- IMPORTANT PART -----
 # =======================================================
 
 # === Random Sampling ===
 
-# Normal splitting using ratio -> Read txt file for analysis. 
+# Normal splitting using ratio -> Read our test_split.txt file for analysis. 
 
 train_set, test_set = shuffle_and_split_data(housing, 0.2)
 
@@ -69,7 +77,7 @@ housing = stratify_grouping(housing)
 housing["income_cat"].value_counts().sort_index().plot.bar(rot=0, grid=True)
 plt.xlabel("Income category")
 plt.ylabel("Number of districts")
-plt.show()
+#plt.show()
 
 # --> Sau khi nhóm các nhóm thu nhập thành các stratas rồi, chúng ta sẽ bắt đầu stratify
 # sampling để được test/train split đều nhau. 
@@ -88,7 +96,7 @@ housing.plot(kind="scatter", x="longitude", y="latitude", grid=True,
     c="median_house_value", cmap="jet", colorbar=True,
     legend=True, sharex=False, figsize=(10, 7))
 
-plt.show()
+#plt.show()
 
 
 # =============================
@@ -105,20 +113,30 @@ print(corr_matrix['median_house_value'].sort_values(ascending=False))
 attributes = ["median_house_value", "median_income", "total_rooms",
 "housing_median_age"]
 scatter_matrix(housing[attributes], figsize=(12, 8))
-plt.show()
+#plt.show()
 
 # --- Looking at the median_house_value row, we see that only the correlation between this and median_income has a positive corr -> plot it ---
 housing.plot(kind='scatter', x='median_income', y='median_house_value', alpha=0.1, grid=True)
-plt.show()
 
-# ==========================
-# === Cleaning the Data ====
-# ==========================
 
-housing = strat_train_set.drop('median_house_value', axis=1)
-housing_labels = strat_train_set['median_house_value'].copy()
+# =========================================================
+# === Prepare the Data for Machine Learning Algorithms ====
+# =========================================================
 
-median = housing['total_bedrooms'].median()
-housing["total_bedrooms"].fillna(median, inplace=True)
+housing = strat_train_set.drop("median_house_value", axis=1) # dropping the (target column) - labels. <predictors/features> 
+housing_labels = strat_train_set["median_house_value"].copy() # getting the target column to predict. <label/target> 
 
-4
+# === Using SimpleImputer to fill missing values with Median (read analysis in Notes to understand more) ====
+imputer = SimpleImputer(strategy='median')
+
+# Because the median can only be computed on numerical values, we need to extract data with only the numerical attributes. 
+housing_num = housing.select_dtypes(include=[np.number])
+
+# Eventhough we know that only total_bedrooms had missing values, we cannot be sure that there won't be any missing values in the new data if the data is changed, so it's safer to apply the imputer to all numerical attributes. 
+imputer.fit(housing_num) # imputer uses fit method to compute the median of each attribute and stored the result in the <statistics_> instance var. 
+
+print(">>> imputer statistics: \n", imputer.statistics_)
+print(">>> housing median statistics: \n", housing_num.median())
+
+# After using fit() to calculate the median of each df columns, we use transform to 'really' apply the median values to the columns: 
+imputer.transform(housing_num)
