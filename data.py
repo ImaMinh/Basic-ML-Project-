@@ -110,3 +110,15 @@ plt.show()
 # --- Looking at the median_house_value row, we see that only the correlation between this and median_income has a positive corr -> plot it ---
 housing.plot(kind='scatter', x='median_income', y='median_house_value', alpha=0.1, grid=True)
 plt.show()
+
+# ==========================
+# === Cleaning the Data ====
+# ==========================
+
+housing = strat_train_set.drop('median_house_value', axis=1)
+housing_labels = strat_train_set['median_house_value'].copy()
+
+median = housing['total_bedrooms'].median()
+housing["total_bedrooms"].fillna(median, inplace=True)
+
+4
