@@ -6,7 +6,7 @@ import urllib.request
 import matplotlib.pyplot as plt
 
 from pandas.plotting import scatter_matrix
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 from sklearn.impute import SimpleImputer
 
 from test_set_split import shuffle_and_split_data, split_data_with_id_hash
@@ -140,3 +140,30 @@ print(">>> housing median statistics: \n", housing_num.median())
 
 # After using fit() to calculate the median of each df columns, we use transform to 'really' apply the median values to the columns: 
 imputer.transform(housing_num)
+
+# === Handling Text and Categorical Attributes: 
+housing_cat = housing[['ocean_proximity']] # [[]] returns a DataFrame instead of ['ocean_prox'] which only returns a normal Series. This works because SkLearn Encoder only works with DataFrame.
+
+# Use SkLearn OrdinalEncoder:
+ordinal_encoder = OrdinalEncoder()
+housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
+
+print(
+    ">>> ordinal_encoder categories: \n", ordinal_encoder.categories_, "\n", # Tại sao ở dòng ordinal encoder đầu chưa gọi housing_cat mà ở đây nó đã nhận được giá trị rồi nhỉ. 
+    ">>> Encoded Categories: \n", housing_cat_encoded[:8]
+)
+
+# Use SkLearn OneHotEncoder: 
+cat_encoder = OneHotEncoder()
+housing_cat_1hot = cat_encoder.fit_transform(housing_cat)
+
+print(housing['ocean_proximity'].info())
+print(">>> Housing category 1 hot: \n", housing_cat_1hot)
+print(">>> OneHotEncoder categories: \n", cat_encoder.categories_)
+
+
+# ===========================================
+# === Feature Scaling and Transformation ====
+# ===========================================
+
+# Use Min-Max Scaling to normalize data: 

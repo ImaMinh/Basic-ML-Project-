@@ -61,5 +61,32 @@ Yes, it can cause issues, but usually it's acceptable:
         + Perform domain-specific preprocessing.
         + Detect distribution shift and adapt model accordingly.
 
+--- After We're done with imputing missing values, we need to handle categorical and text attributes. 
+One way we could do this is encoding categorical text values into numerical value using sklearn OrdinalEncoder. 
+However, since the book said that this causes issues because ML algos will assume that two nearby values are more similar than two distant values. So this isn't a good way of 
+encoding our text attributes. I need to understand more about this. However, book tells us to use OneHotEncoder:
+
 --- Understanding One Hot Encoding: 
 https://www.geeksforgeeks.org/machine-learning/ml-one-hot-encoding/
+
+After running onehotencoding onto our text attributes, we get the following output: 
+
+>>> Housing category 1 hot:
+ <Compressed Sparse Row sparse matrix of dtype 'float64'
+        with 16512 stored elements and shape (16512, 5)>
+  Coords        Values
+  (0, 3)        1.0     <-- This means in row 0, column 3, the value is 1.0
+  (1, 0)        1.0     <-- This menas in row 1, column 0, the value is 1.0
+  (2, 1)        1.0     ...
+  (3, 1)        1.0
+  (4, 4)        1.0
+  (5, 1)        1.0
+  (6, 0)        1.0
+  (7, 3)        1.0
+  :     :
+  (16510, 0)    1.0
+  (16511, 4)    1.0     <-- In row 16511, column 4, the value is 1.0
+
+Each row contains only 1 1.0 value, since each row is a unique text attribute.  
+ 
+Also understand about the difference between 1HotEncoder vs. Pandas get_dummies().
