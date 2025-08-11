@@ -1,0 +1,98 @@
+==== Feature Engineering Section of the Project ====
+
+link: https://www.ibm.com/think/topics/feature-engineering#:~:text=Feature%20engineering%20is%20the%20process,used%20to%20generate%20model%20predictions.
+
+Feature Engineering là việc chuyển đổi dữ liệu thô ra một format mà máy tính có thể hiểu được. 
+Một feature là một attribute. Mỗi feature được coi là một dimension trong không gian, và là một input variable được dùng để tạo ra model (đọc về rbf_kernal).
+
+Feture Engineering Process: 
+
+Một ML model chỉ có thể perform tốt so với cái tập dữ liệu nó được train bằng. 
+Vì vậy nên, data scientist sử dụng một lượng lớn thời gian vào việc chuẩn bị data và tạo feature để sản xuất được một model tốt. 
+
+ML models không được hoạt động tốt nếu như có sự chênh lệch giữa scale của các features.
+Mỗi feature, ví dụ trong housing dataset:
+    + Tổng số phòng: 6 -> 39,320 - một range lớn.
+    + Median income: 0 -> 15 - một range nhỏ hơn. 
+    Nhiều thuật toán ML như gradient descent based models, k-NN, neural networks, bị nhảy cảm tới scale của các feature. Nếu như một attribute có value lớn hơn value khác.
+    Thì model's optimization hoặc distance calculation có thể bị dominate bởi các scale lớn hơn.
+
+    Ví dụ: 
+        + Height in centimeters (khoảng 150 -> 200).
+        + Income in millions (0 -> 10).
+        Thì model sẽ tập trung nhiều hơn vào height tại vì range của height lớn hơn, kể cả nếu income quan trọng hơn. 
+
+Vì vậy nên, feature scaling quan trọng vì nếu những feature có những numeric ranges giống nhau, thì model sẽ treat những feature này fairly hơn. 
+
+Có 2 kiểu scaling thường sử dụng:
+    1. Min-max scaling.
+    2. Standardization (z-score scaling).
+
+Feature Engineering là một iterative process của những steps nôm na như sau: 
+1. Feature Understanding
+2. Structuring/Construction
+3. Transformation
+4. Evaluation
+5. Optimization
+...
+
+Feature Engineering còn phụ thuộc vào vô số các context khác nhau: 
+
+1. Dataset là loại gì: text hay images. 
+2. Relationship giữa attributes và target. 
+3. Model muốn address vấn đề gì.
+
+--> Người ta gọi Feature Engineering là một context-based process. 
+
+
+==== Các Feature Engineering Techniques thường gặp ====
+
+A. Feature Transformation: 
+Feature Transformation is the process of converting one feature type into another, more readable form for a model. 
+Transforming continuous into categorical data.
+    + Binning: Like binning median income, or age intervals, etc.
+    + one-hot encoding: The Inverse? of binning?. This creates numerical features from categorical variables. One-hot encoding maps categorical features to binary
+    represenations, which are used to map the feature in a matrix or vector space. Used ofr things like spam filtering classification in which categories as spam or
+    not spam are converted into 1 and 0, respectively, .e.g. 
+
+B. Feature Extraction and Selection: 
+Feature extraction is a technique for creating new dimensional space for a model by combining variables into new, surrogate variables or in order to reduce dimensions 
+of the model's feature. (dimension reduction/production, manipulation, etc.) (Adding and Removing, manipulating attributes)
+
+
+C. Feature Scaling: 
+Many datasets have outliers that causes biases. Feature scalin normalizes these datasets to produce a better model.
+
+Types of scaling:
+    + min-max scaling
+    + z-score scaling
+
+Khi một feature bị skewed nặng, nếu ta dùng cả min-max lần z-score thì những thuật toán này sẽ ép những giá trị của ta vào một khoảng nhỏ từ 0 -> 1 e.g. mà thường những 
+kiểu distribution như thế này sẽ không hoạt động tốt với các ML systems. 
+
+Vì vậy nên, trước khi ta scale những cái attribute này, ta nên normalize (transform) những cái distribution này để nó shrink cái heavy tail đi. 
+
+Trong sách có đưa ra ví dụ là, nếu một distribution có một tail bị skew nặng và có hình dáng của một power law distribution, việc sử dụng sqrt transformation cũng khá hữu
+ích. Trong sách có hình ảnh minh họa một distribution dân số có hình dáng giống như bell-curved sau khi được sqrt transform xong. 
+
+Một kiểu xử lý heavy-tailed distribution nữa là dùng bucketizing.
+bucketizing là chopping cái distribution thành tường bins có độ dài bằng nhau, và thay những feature value với cái index của cái bin mà nó thuộc về. 
+
+Một kiểu xử lý nữa là thêm một feature mới vào.
+Giới thiệu về RBF: 
+- Định nghĩa: RBF Kernall là một hàm đo sự giống nhau giữa 2 giá trị dựa trên <'khoảng cách'> giữa 2 giá trị đó.
+RBF cơ bản nhất là hàm Gaussian RBF. Gaussian RBF đưa ra 'similarity' bằng tham số gamma - tham số biểu diễn độ lệch giữa giá trị x và giá trị center (rbf_center) khi giá
+trị x ngày càng rút ngắn khỏi giá trị chung. 
+
+- Similarity ở đây là gì: Chúng ta đo giá trị giống nhau giữa 2 giá trị: housing median age và một fixed point (thông thường là mode).
+So, similarity is how close a district's median is to 35. 
+The closer x is to 35, the higher the similarity score. 
+Gamma alf giá trị cho thấy x giảm nhanh như thế nào so với rbf_center = 35. 
+
+similarity=exp(−γ(x−35))**2 
+
+Làm thế nào để mình biết rbf_center (giá trị 35 trong trường hợp này) là gì? 
+Dựa vào context của dataset như thế nào. Ví dụ: nếu distribution là multimodal thì dùng modes sẽ giúp capture local patterns in data.
+Khi nào thì không nên sử dụng mode: 
+nếu unimodel thì có thể dùng mean hoặc median. Ngoài ra, nếu mình là expert thì mình cũng sẽ biết nên chọn cái gì. 
+

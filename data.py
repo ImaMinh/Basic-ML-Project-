@@ -167,3 +167,4 @@ print(">>> OneHotEncoder categories: \n", cat_encoder.categories_)
 # ===========================================
 
 # Use Min-Max Scaling to normalize data: 
+4
