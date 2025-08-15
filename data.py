@@ -8,10 +8,21 @@ import matplotlib.pyplot as plt
 from pandas.plotting import scatter_matrix
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 from sklearn.impute import SimpleImputer
+from sklearn.compose import make_column_selector, make_column_transformer
+from sklearn.preprocessing import StandardScaler
 
 from test_set_split import shuffle_and_split_data, split_data_with_id_hash
 from stratify_sampling_test_train import stratify_grouping, stratify_splitting
 
+from sklearn.linear_model import LinearRegression
+
+# pipeline import:
+from sklearn.pipeline import FunctionTransformer, Pipeline
+from sklearn.pipeline import make_pipeline
+from sklearn.compose import ColumnTransformer
+
+# import custom class: 
+from ClusterSimilarity import ClusterSimilarity
 
 # ======================================== DATA PREPROCESSING ==========================================
 
@@ -113,7 +124,7 @@ print(corr_matrix['median_house_value'].sort_values(ascending=False))
 attributes = ["median_house_value", "median_income", "total_rooms",
 "housing_median_age"]
 scatter_matrix(housing[attributes], figsize=(12, 8))
-#plt.show()
+plt.show()
 
 # --- Looking at the median_house_value row, we see that only the correlation between this and median_income has a positive corr -> plot it ---
 housing.plot(kind='scatter', x='median_income', y='median_house_value', alpha=0.1, grid=True)
@@ -166,5 +177,99 @@ print(">>> OneHotEncoder categories: \n", cat_encoder.categories_)
 # === Feature Scaling and Transformation ====
 # ===========================================
 
-# Use Min-Max Scaling to normalize data: 
-4
+# Break down of book's topics: 
+# 1. Feature Scaling Importance.
+# 2. Min-Max Scaling (Normalization)
+# 3. Standardization (z-score)
+# 4. Scaling Sparse Matrices
+# 5. Handling Heavy Tailed distribution
+# 6. Bucketizing
+# 7. Adding Similarities Features (Gaussinan RBF) (Handling multi-modal distributions)
+# 8. Transforming Target Values
+# 9. Custom Transformers (Function Transformers)
+# 10. Custom trainable transformers (BaseEstimators, TransformerMixin)
+# 11. Cluster Similarity with KMeans + RBF 
+# --> Understand Linear Regression, simple regression vs multiple regression. 
+
+target_scalar = StandardScaler()
+scaled_labels = target_scalar.fit_transform(housing_labels.to_frame())
+
+model = LinearRegression()
+model.fit(housing[['median_income']], scaled_labels)
+some_new_data = housing[['median_income']].iloc[:5] # pretend this is new data
+
+scaled_predictions = model.predict(some_new_data)
+predictions = target_scalar.inverse_transform(scaled_predictions)
+
+# === Custom Transformers ====
+
+num_pipeline = Pipeline([
+    ('impute', SimpleImputer(strategy='median')),
+    ('standardize', StandardScaler())
+])
+
+housing_num_prepared = num_pipeline.fit_transform(housing_num)
+print(housing_num_prepared[:2])
+
+df_housing_num_prepared = pd.DataFrame(
+    housing_num_prepared, columns= num_pipeline.get_feature_names_out(),
+    index=housing_num.index)
+
+num_attribs = ["longitude", "latitude", "housing_median_age", "total_rooms",
+"total_bedrooms", "population", "households", "median_income"]
+
+cat_attribs = ["ocean_proximity"]
+
+cat_pipeline = make_pipeline(
+    SimpleImputer(strategy="most_frequent"),
+    OneHotEncoder(handle_unknown="ignore")
+)
+
+preprocessing = ColumnTransformer([
+    ("num", num_pipeline, num_attribs),
+    ("cat", cat_pipeline, cat_attribs),
+])
+
+def column_ratio(X): return X[:, [0]] / X[:, [1]]
+
+def ratio_name(function_transformer, feature_names_in): return ["ratio"]  # feature names out
+
+def ratio_pipeline(): 
+    return make_pipeline(
+        SimpleImputer(strategy="median"),
+        FunctionTransformer(column_ratio, feature_names_out=ratio_name),
+        StandardScaler()
+    )
+    
+log_pipeline = make_pipeline(
+    SimpleImputer(strategy="median"),
+    FunctionTransformer(np.log, feature_names_out="one-to-one"),
+    StandardScaler()
+)
+
+cluster_simil = ClusterSimilarity(n_clusters=10, gamma=1., random_state=42)
+
+default_num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+
+preprocessing = ColumnTransformer([
+    ("bedrooms", ratio_pipeline(), ["total_bedrooms", "total_rooms"]),
+    ("rooms_per_house", ratio_pipeline(), ["total_rooms", "households"]),
+    ("people_per_house", ratio_pipeline(), ["population", "households"]),
+    ("log", log_pipeline, ["total_bedrooms", "total_rooms", "population",
+    "households", "median_income"]),
+    ("geo", cluster_simil, ["latitude", "longitude"]),
+    ("cat", cat_pipeline, make_column_selector(dtype_include=object)), #  # type: ignore
+], remainder=default_num_pipeline)
+
+
+housing_prepared = preprocessing.fit_transform(housing)
+print(housing_prepared.shape)
+print(preprocessing.get_feature_names_out())
+
+lin_reg = make_pipeline(preprocessing, LinearRegression())
+lin_reg.fit(housing, housing_labels)
+
+housing_predictions = lin_reg.predict(housing)
+lin_reg.fit(housing, housing_labels)
+housing_predictions[:5].round(-2) # type: ignore # round to the nearest hundreds. 
+print(housing_labels.iloc[:5].values)

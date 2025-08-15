@@ -1,0 +1,13 @@
+1. Những khái niệm cơ bản:
+    a. Consistency: tất cả những objects trong scikit learn đều có một giao diện giống nhau.
+
+-- 3 cái roles mà các class của Scikit learn đều có được: 
+    1. Estimators: những cái object nào mà learn được tham số từ data là một estimator. 
+    2. Transformers: estimators có thể thay đổi được dataset. 
+    3. Predictors: 
+        Những cái object nào mà có thể predict outputs từ tham số inputs. Ví dụ: Linear Regression predicts house prices given features. 
+
+
+SKlearn three big roles: 
+1. Estimator
+2. Transfromers 
